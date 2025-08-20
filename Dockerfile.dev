@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install both production and development dependencies
-RUN npm install
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
 
 # Copy source code
 COPY . .
@@ -26,12 +26,10 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S uniprot -u 1001
 
-# Copy only necessary files from the builder stage
+# Copy built application from builder stage
 COPY --from=builder --chown=uniprot:nodejs /app/build ./build
 COPY --from=builder --chown=uniprot:nodejs /app/package*.json ./
-# Do NOT copy node_modules from builder, but install production dependencies
-# Installing only production dependencies here.
-RUN npm install --only=production
+COPY --from=builder --chown=uniprot:nodejs /app/node_modules ./node_modules
 
 # Switch to non-root user
 USER uniprot
